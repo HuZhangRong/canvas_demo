@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>canvas实现视频播放</title>
+	</head>
+	<body>
+		<canvas id="canvas" width="1000" height="500">
+			当前浏览器不支持canvas元素，请升级或更换浏览器！
+		</canvas>
+		<div id="videodiv"></div>
+		<button id='play'>播放视频</button>
+		<button id="pause">暂停播放</button>
+	</body>
+</html>
+<script type="text/javascript">
+	//创建Video标签
+	var video = document.createElement('Video');
+	video.src = '//video.699pic.com/videos/33/17/26/a_jhd9S2I1jmzY1541331726_10s.mp4';
+	video.controls = true;
+
+	const canvas = document.getElementById('canvas');
+	const ctx = canvas.getContext('2d');
+	render()
+
+	function render() {
+		window.requestAnimationFrame(render);
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.drawImage(video, 0, 0, canvas.width, canvas.height) //绘制视频
+	}
+	var playele = document.getElementById("play");
+	playele.addEventListener('click', click);
+	
+	var pauseele = document.getElementById("pause");
+	pause.addEventListener('click', click);
+	
+	function click() {
+		if (video.paused) {
+			video.play();
+		} else {
+			video.pause();
+		}
+	}
+</script>

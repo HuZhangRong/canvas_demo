@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>canvas - 刮刮奖</title>
+  <style>
+    /* 给画布增加一个阴影和圆角的样式 */
+    canvas {
+      background-image: url("https://gimg2.baidu.com/image_search/src=http%3A%2F%2Ffile.moyublog.com%2Fd%2Ffile%2F2021-05-29%2Ff8b2a20556774afebed8fd91ccbe0497.jpg&refer=http%3A%2F%2Ffile.moyublog.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1672406341&t=a0b71fded87dd696982c1632cc015397");
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0px 0px 5px #ccc;
+      border-radius: 8px;
+      float: left;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="1000" height="500">
+    当前浏览器不支持canvas元素，请升级或更换浏览器！
+  </canvas>
+  <script>
+    // 获取 canvas 元素
+    var canvas = document.getElementById('canvas');
+   
+    // 通过判断getContext方法是否存在来判断浏览器的支持性
+    if(canvas.getContext) {
+      // 获取绘图上下文
+      var ctx = canvas.getContext('2d');
+      const imageUrl = "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Ffile.moyublog.com%2Fd%2Ffile%2F2021-05-29%2Ff8b2a20556774afebed8fd91ccbe0497.jpg&refer=http%3A%2F%2Ffile.moyublog.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1672406341&t=a0b71fded87dd696982c1632cc015397";
+
+      // 设置画笔
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.lineWidth = 20
+
+      // 为canvas添加鼠标按下事件
+      canvas.addEventListener("mousedown", mousedownFn, false)
+      let downX,downY
+      // 鼠标按下触发的方法
+      function mousedownFn(e) {
+        e.preventDefault()
+        downX = e.pageX
+        downY = e.pageY
+        drawLine({startX: downX, startY: downY})
+        // 为canvas添加鼠标移动和鼠标抬起事件
+        canvas.addEventListener("mousemove", mousemoveFn, false)
+        canvas.addEventListener("mouseup", mouseupFn, false)
+      }
+
+      // 鼠标移动触发
+      function mousemoveFn(e) {
+        e.preventDefault()
+        const moveX = e.pageX
+        const moveY = e.pageY
+        drawLine({endX: moveX, endY: moveY})
+        downX = moveX
+        downY = moveY
+      }
+
+      // 鼠标抬起触发
+      function mouseupFn() {
+        // 鼠标抬起以后移除事件
+        canvas.removeEventListener("mousemove", mousemoveFn, false)
+        canvas.removeEventListener("mouseup", mouseupFn, false)
+      }
+
+      // 画线
+      function drawLine(position) {
+        const { startX, startY, endX, endY } = position
+        ctx.beginPath()
+        ctx.moveTo(startX, startY)
+        ctx.lineTo(endX || startX, endY || startY)
+        ctx.stroke()
+      }
+
+      drawImage(imageUrl)
+      function drawImage(src) {
+        const img = new Image()
+        img.crossOrigin = ''
+        img.src = src
+        img.onload = () => {
+          const imageAspectRatio = img.width / img.height
+          const canvasAspectRatio = canvas.width / canvas.height
+          ctx.drawImage( img, 0, 0, canvas.width, canvas.height )
+
+          // 把像素数据模糊化
+          var canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          var tempData = gaussBlur(canvasData, 20);
+          ctx.putImageData(tempData,0,0);
+
+          // 设置绘制类型
+          ctx.globalCompositeOperation = 'destination-out'
+        }
+      }
+
+      function gaussBlur(imgData) {
+        const pixes = imgData.data;
+        const width = imgData.width;
+        const height = imgData.height;
+        const gaussMatrix = [];
+        let gaussSum = 0;
+        let x;
+        let y;
+        let r;
+        let g;
+        let b;
+        let a;
+        let i;
+        let j;
+        let k;
+        let len;
+        const radius = 10;
+        const sigma = 20;
+        a = 1 / (Math.sqrt(2 * Math.PI) * sigma);
+        b = -1 / (2 * sigma * sigma);
+        // 生成高斯矩阵
+        for (i = 0, x = -radius; x <= radius; x++, i++) {
+          g = a * Math.exp(b * x * x);
+          gaussMatrix[i] = g;
+          gaussSum += g;
+        }
+
+        // 归一化, 保证高斯矩阵的值在[0,1]之间
+        for (i = 0, len = gaussMatrix.length; i < len; i++) {
+          gaussMatrix[i] /= gaussSum;
+        }
+
+        // x 方向一维高斯运算
+        for (y = 0; y < height; y++) {
+          for (x = 0; x < width; x++) {
+            r = g = b = a = 0;
+            gaussSum = 0;
+            for (j = -radius; j <= radius; j++) {
+              k = x + j;
+              if (k >= 0 && k < width) {
+                // 确保 k 没超出 x 的范围
+                // r,g,b,a 四个一组
+                i = (y * width + k) * 4;
+                r += pixes[i] * gaussMatrix[j + radius];
+                g += pixes[i + 1] * gaussMatrix[j + radius];
+                b += pixes[i + 2] * gaussMatrix[j + radius];
+                // a += pixes[i + 3] * gaussMatrix[j];
+                gaussSum += gaussMatrix[j + radius];
+              }
+            }
+            i = (y * width + x) * 4;
+            // 除以 gaussSum 是为了消除处于边缘的像素, 高斯运算不足的问题
+            // console.log(gaussSum)
+            pixes[i] = r / gaussSum;
+            pixes[i + 1] = g / gaussSum;
+            pixes[i + 2] = b / gaussSum;
+            // pixes[i + 3] = a ;
+          }
+        }
+
+        // y 方向一维高斯运算
+
+        for (x = 0; x < width; x++) {
+          for (y = 0; y < height; y++) {
+            r = g = b = a = 0;
+            gaussSum = 0;
+            for (j = -radius; j <= radius; j++) {
+              k = y + j;
+              if (k >= 0 && k < height) {
+                // 确保 k 没超出 y 的范围
+                i = (k * width + x) * 4;
+                r += pixes[i] * gaussMatrix[j + radius];
+                g += pixes[i + 1] * gaussMatrix[j + radius];
+                b += pixes[i + 2] * gaussMatrix[j + radius];
+                // a += pixes[i + 3] * gaussMatrix[j];
+                gaussSum += gaussMatrix[j + radius];
+              }
+            }
+            i = (y * width + x) * 4;
+            pixes[i] = r / gaussSum;
+            pixes[i + 1] = g / gaussSum;
+            pixes[i + 2] = b / gaussSum;
+          }
+        }
+        return imgData
+      }
+    }
+  </script>
+</body>
+</html>
