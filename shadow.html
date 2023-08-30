@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+	</head>
+	<style>
+		div {
+			background-color: hsla(0, 0%, 100%, 0);
+			background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAHVJREFUWAnt07ENwCAMRFGTObz/YvYekJL+O1KK7wqKs9DTsapqx+Bk5uC2iGd02wfLfCBFVVBBKkDzdlBBKkDzdlBBKkDzdlBBKkDza79Dl9z57r6v+OwnoYQKKkgFaN4OKkgFaN4OKkgFaN4OKkgFaP73HTzw9grzMuBHJQAAAABJRU5ErkJggg==);
+		}
+	</style>
+	<body>
+		<canvas id="canvas" style="cursor: pointer;" width="1000px" height="1000px"></canvas>
+	</body>
+</html>
+<script type="text/javascript">
+	var canvas = new fabric.Canvas('canvas');
+
+	var imageUrl = `./image.png`;
+	fabric.Image.fromURL(imageUrl, function(img) {
+		img.set({
+			left: 50,
+			top: 50,
+			shadow: {
+				color: 'green',
+				blur: 10,
+				offsetX: 50,
+				offsetY: 50
+			},
+
+		})
+		canvas.add(img);
+		canvas.renderAll()
+	});
+</script>

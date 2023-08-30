@@ -1,0 +1,85 @@
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Opencv JS</title>
+		<script src="./jsfeat-min.js"></script>
+
+	</head>
+	<body>
+		<canvas id="imageCanvas" width="1000" height="1000"></canvas>
+		<canvas id="outlineCanvas" width="1000" height="1000"></canvas>
+
+	</body>
+	<script type="text/JavaScript">
+		/**
+	 * npm install jsfeat
+	 * https://github.com/inspirit/jsfeat/tree/master/build
+	 */
+  const imageCanvas = document.getElementById('imageCanvas');
+  const outlineCanvas = document.getElementById('outlineCanvas');
+  const ctx = imageCanvas.getContext('2d');
+  const outlineCtx = outlineCanvas.getContext('2d');
+  
+  const image = new Image();
+  image.src = './image.png'; // 替换为您的图像路径
+  
+  image.onload = function () {
+    imageCanvas.width = image.width;
+    imageCanvas.height = image.height;
+    outlineCanvas.width = image.width;
+    outlineCanvas.height = image.height;
+   // 可选参数
+      var blur_radius =1;
+      var low_threshold =2;
+      var high_threshold = 5;
+    ctx.drawImage(image, 0, 0);
+  
+    // 获取图像数据
+    const imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+  // 图像边缘查找处理
+      // 原理为：
+      // 1. 灰度
+      // 2. 高斯模糊
+      // 3. canny边缘检测
+      var img_u8 = new jsfeat.matrix_t(image.width, image.height, jsfeat.U8C1_t);
+      jsfeat.imgproc.grayscale(imageData.data, image.width, image.height, img_u8);
+      var kernelSize = (blur_radius + 1) * 2;
+      jsfeat.imgproc.gaussian_blur(img_u8, img_u8, kernelSize, 0);
+      jsfeat.imgproc.canny(img_u8, img_u8, low_threshold, high_threshold);
+  
+      // 渲染结果重新绘制到canvas
+      var data_u32 = new Uint32Array(imageData.data.buffer);
+      var alpha = (0xff << 24);
+      var i = img_u8.cols * img_u8.rows, pix = 0;
+      while(--i >= 0) {
+          pix = 255 - img_u8.data[i];
+          data_u32[i] = alpha | (pix << 16) | (pix << 8) | pix;
+      }
+      outlineCtx.putImageData(imageData, 0, 0);
+	  
+	  // 在轮廓上绘制红色描边
+	    outlineCtx.globalCompositeOperation = 'source-over';
+		const strokeWidth=2;
+		
+	    // 在轮廓Canvas上绘制红色描边
+	     outlineCtx.strokeStyle = 'green'; // 设置描边颜色为红色
+	     outlineCtx.lineWidth =strokeWidth; // 设置描边宽度
+	     outlineCtx.beginPath();
+	     for (let y = 0; y < img_u8.rows; y++) {
+	       for (let x = 0; x < img_u8.cols; x++) {
+	         if (img_u8.data[y * img_u8.cols + x] > 0) {
+	           outlineCtx.rect(x - strokeWidth/2, y - strokeWidth/2,strokeWidth, strokeWidth); // 以边缘点为中心绘制矩形
+	         }
+	       }
+	     }
+		 
+	     outlineCtx.stroke();
+
+		
+	    outlineCtx.drawImage(imageCanvas, 0, 0);
+  };
+
+
+</script>
+</html>
