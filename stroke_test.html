@@ -25,15 +25,28 @@
   image.src = './image.png'; // 替换为您的图像路径
   
   image.onload = function () {
+	  
+
+	  
     imageCanvas.width = image.width;
     imageCanvas.height = image.height;
     outlineCanvas.width = image.width;
     outlineCanvas.height = image.height;
+	
+	// 绘制原始图片
+	  ctx.drawImage(image,-100, -100);
+	/**
+	 blur_radius：模糊半径，控制高斯模糊的程度。较大的值会导致更强烈的模糊效果，默认值为1。
+	 
+    low_threshold：低阈值，用于Canny边缘检测的阈值处理。所有低于该阈值的边缘点都会被丢弃，默认值为2。
+   
+    high_threshold：高阈值，用于Canny边缘检测的阈值处理。所有高于该阈值的边缘点都会被保留为强边缘点，默认值为5。
+	 
+	 */
    // 可选参数
       var blur_radius =1;
       var low_threshold =2;
       var high_threshold = 5;
-    ctx.drawImage(image, 0, 0);
   
     // 获取图像数据
     const imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
@@ -42,10 +55,17 @@
       // 1. 灰度
       // 2. 高斯模糊
       // 3. canny边缘检测
+	  
+	  // 将图像数据转换为jsfeat矩阵
       var img_u8 = new jsfeat.matrix_t(image.width, image.height, jsfeat.U8C1_t);
       jsfeat.imgproc.grayscale(imageData.data, image.width, image.height, img_u8);
+	  
+	  // 定义高斯模糊的内核大小
       var kernelSize = (blur_radius + 1) * 2;
+	  // 应用高斯模糊
       jsfeat.imgproc.gaussian_blur(img_u8, img_u8, kernelSize, 0);
+	  
+	  // 使用Canny边缘检测算法检测边缘
       jsfeat.imgproc.canny(img_u8, img_u8, low_threshold, high_threshold);
   
       // 渲染结果重新绘制到canvas
